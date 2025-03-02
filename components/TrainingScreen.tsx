@@ -178,44 +178,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onFinish }) => {
     }
   };
 
-  // Tocar uma sequência de notas que indica sucesso (dan dan dáan)
-  const playSuccessSound = async () => {
-    try {
-      console.log('Tocando som de sucesso!');
-      
-      // Criar uma melodia de sucesso mais empolgante
-      // Usamos notas de um acorde maior com uma progressão ascendente
-      const successNotes: Note[] = [
-        GUITAR_NOTES.find(note => note.name === 'C4') || GUITAR_NOTES[20], // C4
-        GUITAR_NOTES.find(note => note.name === 'E4') || GUITAR_NOTES[24], // E4
-        GUITAR_NOTES.find(note => note.name === 'G4') || GUITAR_NOTES[27], // G4
-        GUITAR_NOTES.find(note => note.name === 'C5') || GUITAR_NOTES[32], // C5
-      ];
-      
-      // Tocar uma melodia ascendente: dan-dan-daaaan!
-      // Primeira nota
-      await AudioUtils.playNote(successNotes[0]);
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      // Segunda nota (um pouco mais alta)
-      await AudioUtils.playNote(successNotes[1]);
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      // Terceira nota (mais alta)
-      await AudioUtils.playNote(successNotes[2]);
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      // Nota final (a mais alta) com duração maior para enfatizar o sucesso
-      await AudioUtils.playNote(successNotes[3]);
-      // Esperar para garantir que a nota é ouvida completamente
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      return;
-    } catch (error) {
-      console.error('Erro ao tocar som de sucesso:', error);
-    }
-  };
-
   // Play the current sequence
   const playCurrentSequence = async () => {
     // Verificar se temos notas para tocar
@@ -227,12 +189,21 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onFinish }) => {
     console.log('Tocando sequência atual:', currentNotes.map(note => note.name).join(', '));
     setSequenceInProgress(true);
     
-    // Play sequence 3 times
-    for (let i = 0; i < 3; i++) {
-      await AudioUtils.playSequence(currentNotes, 1000);
-      if (i < 2) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    // Pausar a detecção para evitar que o app detecte suas próprias notas
+    await AudioUtils.pausePitchDetection();
+    
+    try {
+      // Play sequence 3 times
+      for (let i = 0; i < 3; i++) {
+        await AudioUtils.playSequence(currentNotes, 1000);
+        if (i < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       }
+    } finally {
+      // Garantir que a detecção seja retomada mesmo se houver erros
+      await AudioUtils.resumePitchDetection();
+      setSequenceInProgress(false);
     }
   };
   
@@ -246,12 +217,69 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ onFinish }) => {
     console.log('Tocando notas específicas:', notes.map(note => note.name).join(', '));
     setSequenceInProgress(true);
     
-    // Play sequence 3 times
-    for (let i = 0; i < 3; i++) {
-      await AudioUtils.playSequence(notes, 1000);
-      if (i < 2) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    // Pausar a detecção para evitar que o app detecte suas próprias notas
+    await AudioUtils.pausePitchDetection();
+    
+    try {
+      // Play sequence 3 times
+      for (let i = 0; i < 3; i++) {
+        await AudioUtils.playSequence(notes, 1000);
+        if (i < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       }
+    } finally {
+      // Garantir que a detecção seja retomada mesmo se houver erros
+      await AudioUtils.resumePitchDetection();
+      setSequenceInProgress(false);
+    }
+  };
+
+  // Tocar uma sequência de notas que indica sucesso (dan dan dáan)
+  const playSuccessSound = async () => {
+    try {
+      console.log('Tocando som de sucesso!');
+      
+      // Pausar a detecção para evitar que o app detecte suas próprias notas
+      await AudioUtils.pausePitchDetection();
+      
+      // Criar uma melodia de sucesso mais empolgante
+      // Usamos notas de um acorde maior com uma progressão ascendente
+      const successNotes: Note[] = [
+        GUITAR_NOTES.find(note => note.name === 'C4') || GUITAR_NOTES[20], // C4
+        GUITAR_NOTES.find(note => note.name === 'E4') || GUITAR_NOTES[24], // E4
+        GUITAR_NOTES.find(note => note.name === 'G4') || GUITAR_NOTES[27], // G4
+        GUITAR_NOTES.find(note => note.name === 'C5') || GUITAR_NOTES[32], // C5
+      ];
+      
+      try {
+        // Tocar uma melodia ascendente: dan-dan-daaaan!
+        // Primeira nota
+        await AudioUtils.playNote(successNotes[0]);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Segunda nota (um pouco mais alta)
+        await AudioUtils.playNote(successNotes[1]);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Terceira nota (mais alta)
+        await AudioUtils.playNote(successNotes[2]);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Nota final (a mais alta) com duração maior para enfatizar o sucesso
+        await AudioUtils.playNote(successNotes[3]);
+        // Esperar para garantir que a nota é ouvida completamente
+        await new Promise(resolve => setTimeout(resolve, 600));
+      } finally {
+        // Garantir que a detecção seja retomada mesmo se houver erros
+        await AudioUtils.resumePitchDetection();
+      }
+      
+      return;
+    } catch (error) {
+      console.error('Erro ao tocar som de sucesso:', error);
+      // Garantir que a detecção seja retomada em caso de erro
+      await AudioUtils.resumePitchDetection();
     }
   };
 

@@ -39,6 +39,8 @@ class AudioUtils {
   private minFrequency: number = 80; // Frequência mínima detectável (E2 ~ 82Hz)
   private maxFrequency: number = 1200; // Frequência máxima detectável (bem acima de C6)
   private isMobileListening: boolean = false;
+  private isPitchDetectionPaused: boolean = false;
+  private pitchDetectionWasRunning: boolean = false;
 
   // Initialize audio system
   async init() {
@@ -85,8 +87,21 @@ class AudioUtils {
       console.log(`Playing note: ${note.name} (${note.frequency} Hz) - AudioFile: ${note.audioFile}`);
       console.log(`Note object:`, JSON.stringify(note));
       
-      // Use SoundManager to play the note usando o nome do arquivo de áudio
-      await SoundManager.playSound(note.audioFile);
+      // Verificar se a detecção já está pausada. Se não estiver, pausá-la temporariamente
+      const wasPitchDetectionPaused = this.isPitchDetectionPaused;
+      if (!wasPitchDetectionPaused) {
+        await this.pausePitchDetection();
+      }
+      
+      try {
+        // Use SoundManager to play the note usando o nome do arquivo de áudio
+        await SoundManager.playSound(note.audioFile);
+      } finally {
+        // Retomar a detecção de pitch apenas se ela não estava pausada antes
+        if (!wasPitchDetectionPaused) {
+          await this.resumePitchDetection();
+        }
+      }
     } catch (error) {
       console.error(`Failed to play note ${note.name}`, error);
     }
@@ -98,12 +113,25 @@ class AudioUtils {
       if (!this.isInitialized) {
         await this.init();
       }
+
+      // Verificar se a detecção já está pausada. Se não estiver, pausá-la temporariamente
+      const wasPitchDetectionPaused = this.isPitchDetectionPaused;
+      if (!wasPitchDetectionPaused) {
+        await this.pausePitchDetection();
+      }
       
-      for (let i = 0; i < notes.length; i++) {
-        await this.playNote(notes[i]);
-        
-        if (i < notes.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, delayBetweenNotes));
+      try {
+        for (let i = 0; i < notes.length; i++) {
+          await this.playNote(notes[i]);
+          
+          if (i < notes.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenNotes));
+          }
+        }
+      } finally {
+        // Retomar a detecção de pitch apenas se ela não estava pausada antes
+        if (!wasPitchDetectionPaused) {
+          await this.resumePitchDetection();
         }
       }
     } catch (error) {
@@ -602,6 +630,140 @@ class AudioUtils {
       console.error('Erro no teste de áudio:', error);
       return false;
     }
+  }
+
+  // Pausa temporariamente a detecção de pitch sem fechar recursos
+  async pausePitchDetection() {
+    console.log('Pausando detecção de pitch');
+    
+    // Verificar se a detecção está em execução
+    this.pitchDetectionWasRunning = 
+      this.pitchDetectionInterval !== null || 
+      this.mobileRecordingInterval !== null;
+    
+    if (!this.pitchDetectionWasRunning) {
+      console.log('Detecção não estava em execução, nada a pausar');
+      return;
+    }
+    
+    // Parar intervalos de detecção sem fechar recursos
+    if (this.pitchDetectionInterval) {
+      clearInterval(this.pitchDetectionInterval);
+      this.pitchDetectionInterval = null;
+    }
+    
+    if (this.mobileRecordingInterval) {
+      clearInterval(this.mobileRecordingInterval);
+      this.mobileRecordingInterval = null;
+    }
+    
+    this.isPitchDetectionPaused = true;
+    console.log('Detecção de pitch pausada');
+  }
+
+  // Retoma a detecção de pitch após pausa
+  async resumePitchDetection() {
+    console.log('Resumindo detecção de pitch');
+    
+    if (!this.isPitchDetectionPaused || !this.pitchDetectionWasRunning) {
+      console.log('Detecção não estava pausada ou não estava em execução antes da pausa');
+      return;
+    }
+    
+    // Web
+    if (Platform.OS === 'web' && this.audioContext && this.analyser && this.recordingDataArray) {
+      this.pitchDetectionInterval = setInterval(() => {
+        if (!this.analyser || !this.recordingDataArray) return;
+        
+        this.analyser.getFloatTimeDomainData(this.recordingDataArray);
+        
+        // Calcular o volume atual (RMS)
+        let sum = 0;
+        for (let i = 0; i < this.recordingDataArray.length; i++) {
+          sum += this.recordingDataArray[i] * this.recordingDataArray[i];
+        }
+        const rms = Math.sqrt(sum / this.recordingDataArray.length);
+        
+        // Enviar o volume para a callback mesmo quando abaixo do threshold
+        if (this.onPitchDetected) {
+          this.onPitchDetected(null, rms);
+        }
+        
+        // Só processar a detecção de frequência se o volume estiver acima do threshold
+        if (rms >= this.volumeThreshold) {
+          try {
+            // Usar múltiplos detectores para maior precisão
+            let pitch1 = null;
+            let pitch2 = null;
+            let pitch3 = null;
+            
+            try {
+              pitch1 = this.pitchDetector(this.recordingDataArray);
+              pitch2 = this.yinDetector(this.recordingDataArray);
+              pitch3 = this.amdfDetector(this.recordingDataArray);
+            } catch (err) {
+              console.error('Error during pitch detection:', err);
+            }
+            
+            // Extrair os números das frequências detectadas
+            if (pitch1 && typeof pitch1 === 'object' && 'freq' in pitch1) {
+              pitch1 = pitch1.freq;
+            }
+            
+            // Filtrar valores nulos
+            const validPitches = [pitch1, pitch2, pitch3]
+              .filter(p => p !== null && p !== undefined)
+              .map(p => typeof p === 'number' ? p : 0)
+              .filter(p => p > this.minFrequency && p < this.maxFrequency);
+            
+            // Se temos pelo menos uma detecção válida
+            if (validPitches.length > 0) {
+              // Média dos detectores válidos
+              const sum = validPitches.reduce((acc, val) => acc + val, 0);
+              const pitch = sum / validPitches.length;
+              
+              // Adicionar ao histórico apenas se estiver no intervalo válido
+              if (pitch > this.minFrequency && pitch < this.maxFrequency) {
+                this.detectionHistory.push(pitch);
+                
+                // Manter o tamanho do histórico limitado
+                if (this.detectionHistory.length > this.historySize) {
+                  this.detectionHistory.shift();
+                }
+                
+                // Calcular a média dos últimos N valores para estabilidade
+                const averagePitch = this.detectionHistory.reduce((a, b) => a + b, 0) / this.detectionHistory.length;
+                
+                // Verificar a variância no histórico para evitar oscilações rápidas
+                const variance = this.calculateVariance(this.detectionHistory, averagePitch);
+                const isStable = variance < 5; // Baixa variância = detecção mais estável
+                
+                if (isStable && this.detectionHistory.length >= 3) {
+                  const detectedNote = findClosestNote(averagePitch);
+                  if (this.onPitchDetected && detectedNote) {
+                    this.onPitchDetected(detectedNote, rms);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error in pitch detection:', e);
+          }
+        }
+      }, 100);
+    } 
+    // iOS
+    else if (Platform.OS === 'ios') {
+      this.startNativePitchDetection();
+    } 
+    // Android
+    else if (Platform.OS === 'android') {
+      this.startEnhancedSimulatedDetection();
+    }
+    
+    this.isPitchDetectionPaused = false;
+    this.pitchDetectionWasRunning = false;
+    console.log('Detecção de pitch resumida');
   }
 }
 
