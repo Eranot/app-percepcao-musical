@@ -1,28 +1,30 @@
 // This file helps handle imports for sounds that don't exist yet
 
-import { InstrumentType } from '@/constants/AppContext';
-import { Asset } from 'expo-asset';
-import { Audio } from 'expo-av';
+import { InstrumentType } from "@/constants/AppContext";
+import { Asset } from "expo-asset";
+import { Audio } from "expo-av";
 
 // Mapeamento de nomes de notas para nomes de arquivos
 // Note que utilizamos o formato onde # é representado por "-"
 // Por exemplo: "C#3" é representado como "c-3.mp3"
 const getNoteFileName = (noteName: string): string => {
   // Se parece com um nome de arquivo, retorna como está
-  if (noteName.endsWith('.mp3')) {
+  if (noteName.endsWith(".mp3")) {
     console.log(`Note name is already a file name: ${noteName}`);
     return noteName;
   }
-  
+
   // Converter nomes como "C#3/Db3" para "c-3.mp3"
-  const parts = noteName.split('/')[0]; // Pegar apenas a primeira parte (antes da barra)
-  
+  const parts = noteName.split("/")[0]; // Pegar apenas a primeira parte (antes da barra)
+
   // Converter para lowercase e substituir # por - para corresponder ao nome de arquivo
-  let cleanName = parts.toLowerCase().replace('#', '-');
-  
+  let cleanName = parts.toLowerCase().replace("#", "-");
+
   // Log para debug
-  console.log(`Converting note name: ${noteName} -> file name: ${cleanName}.mp3`);
-  
+  console.log(
+    `Converting note name: ${noteName} -> file name: ${cleanName}.mp3`
+  );
+
   return `${cleanName}.mp3`;
 };
 
@@ -36,7 +38,7 @@ type SoundCache = {
 
 class SoundManager {
   private soundCache: SoundCache = {};
-  private currentInstrument: InstrumentType = 'synth';
+  private currentInstrument: InstrumentType = "synth";
   private cacheLimit = 20; // Limite de sons em cache
   private isAudioEnabled: boolean = false;
 
@@ -83,8 +85,10 @@ class SoundManager {
 
   // Carregar e reproduzir um som
   async playSound(noteName: string): Promise<void> {
-    console.log(`⏯️ Attempting to play sound for note: ${noteName} (instrument: ${this.currentInstrument})`);
-    
+    console.log(
+      `⏯️ Attempting to play sound for note: ${noteName} (instrument: ${this.currentInstrument})`
+    );
+
     try {
       // Verificar se o Audio está inicializado
       if (!this.isAudioEnabled) {
@@ -95,16 +99,16 @@ class SoundManager {
           return;
         }
       }
-      
+
       const cacheKey = `${this.currentInstrument}_${noteName}`;
-      
+
       // Verificar se o som já está em cache
       if (this.soundCache[cacheKey]) {
         console.log(`Using cached sound for ${noteName}`);
         const { sound } = this.soundCache[cacheKey];
         // Atualizar timestamp de uso
         this.soundCache[cacheKey].lastUsed = Date.now();
-        
+
         // Resetar som para o início antes de reproduzir novamente
         await sound.setPositionAsync(0);
         console.log(`Playing cached sound for ${noteName}...`);
@@ -120,19 +124,27 @@ class SoundManager {
         // Obter o asset específico para a nota
         console.log(`Getting specific sound asset for ${noteName}`);
         const soundAsset = this.getSpecificSoundAsset(noteName);
-        console.log(`Sound asset obtained: `, soundAsset ? "Asset exists" : "No asset found");
-        
+        console.log(
+          `Sound asset obtained: `,
+          soundAsset ? "Asset exists" : "No asset found"
+        );
+
         // Criar um novo objeto de som
         console.log(`Creating Sound object for ${noteName}...`);
-        const soundResult = await Audio.Sound.createAsync(soundAsset, { shouldPlay: false });
-        console.log(`Sound object created successfully:`, soundResult ? "Success" : "Failed");
-        
+        const soundResult = await Audio.Sound.createAsync(soundAsset, {
+          shouldPlay: false,
+        });
+        console.log(
+          `Sound object created successfully:`,
+          soundResult ? "Success" : "Failed"
+        );
+
         const { sound } = soundResult;
 
         // Adicionar ao cache
         this.soundCache[cacheKey] = {
           sound,
-          lastUsed: Date.now()
+          lastUsed: Date.now(),
         };
         console.log(`Added ${noteName} sound to cache`);
 
@@ -146,12 +158,12 @@ class SoundManager {
         try {
           console.log(`Trying fallback sound c4.mp3 for ${noteName}`);
           const fallbackSound = await Audio.Sound.createAsync(
-            require('../assets/sounds/synth/c4.mp3')
+            require("../assets/sounds/synth/c4.mp3")
           );
           await fallbackSound.sound.playAsync();
           console.log(`Played fallback sound for ${noteName}`);
         } catch (fallbackError) {
-          console.error('Could not play fallback sound:', fallbackError);
+          console.error("Could not play fallback sound:", fallbackError);
         }
       }
     } catch (error) {
@@ -164,175 +176,327 @@ class SoundManager {
   private getSpecificSoundAsset(noteName: string): any {
     const fileName = getNoteFileName(noteName);
     console.log(`Finding asset for: ${noteName} -> ${fileName}`);
-    
+
     // Suporte para o instrumento synth
-    if (this.currentInstrument === 'synth') {
+    if (this.currentInstrument === "synth") {
       switch (fileName) {
         // Notas do 2º octave
-        case 'a2.mp3': 
-          console.log('Loading asset: synth a2.mp3');
-          return require('../assets/sounds/synth/a2.mp3');
-        case 'a-2.mp3': 
-          console.log('Loading asset: synth a-2.mp3');
-          return require('../assets/sounds/synth/a-2.mp3');
-        case 'b2.mp3': 
-          console.log('Loading asset: synth b2.mp3');
-          return require('../assets/sounds/synth/b2.mp3');
-        case 'e2.mp3': 
-          console.log('Loading asset: synth e2.mp3');
-          return require('../assets/sounds/synth/e2.mp3');
-        case 'f2.mp3': 
-          console.log('Loading asset: synth f2.mp3');
-          return require('../assets/sounds/synth/f2.mp3');
-        case 'f-2.mp3': 
-          console.log('Loading asset: synth f-2.mp3');
-          return require('../assets/sounds/synth/f-2.mp3');
-        case 'g2.mp3': 
-          console.log('Loading asset: synth g2.mp3');
-          return require('../assets/sounds/synth/g2.mp3');
-        case 'g-2.mp3': 
-          console.log('Loading asset: synth g-2.mp3');
-          return require('../assets/sounds/synth/g-2.mp3');
+        case "a2.mp3":
+          console.log("Loading asset: synth a2.mp3");
+          return require("../assets/sounds/synth/a2.mp3");
+        case "a-2.mp3":
+          console.log("Loading asset: synth a-2.mp3");
+          return require("../assets/sounds/synth/a-2.mp3");
+        case "b2.mp3":
+          console.log("Loading asset: synth b2.mp3");
+          return require("../assets/sounds/synth/b2.mp3");
+        case "e2.mp3":
+          console.log("Loading asset: synth e2.mp3");
+          return require("../assets/sounds/synth/e2.mp3");
+        case "f2.mp3":
+          console.log("Loading asset: synth f2.mp3");
+          return require("../assets/sounds/synth/f2.mp3");
+        case "f-2.mp3":
+          console.log("Loading asset: synth f-2.mp3");
+          return require("../assets/sounds/synth/f-2.mp3");
+        case "g2.mp3":
+          console.log("Loading asset: synth g2.mp3");
+          return require("../assets/sounds/synth/g2.mp3");
+        case "g-2.mp3":
+          console.log("Loading asset: synth g-2.mp3");
+          return require("../assets/sounds/synth/g-2.mp3");
         // Notas do 3º octave
-        case 'a3.mp3': 
-          console.log('Loading asset: synth a3.mp3');
-          return require('../assets/sounds/synth/a3.mp3');
-        case 'a-3.mp3': 
-          console.log('Loading asset: synth a-3.mp3');
-          return require('../assets/sounds/synth/a-3.mp3');
-        case 'b3.mp3': 
-          console.log('Loading asset: synth b3.mp3');
-          return require('../assets/sounds/synth/b3.mp3');
-        case 'c3.mp3': 
-          console.log('Loading asset: synth c3.mp3');
-          return require('../assets/sounds/synth/c3.mp3');
-        case 'c-3.mp3': 
-          console.log('Loading asset: synth c-3.mp3');
-          return require('../assets/sounds/synth/c-3.mp3');
-        case 'd3.mp3': 
-          console.log('Loading asset: synth d3.mp3');
-          return require('../assets/sounds/synth/d3.mp3');
-        case 'd-3.mp3': 
-          console.log('Loading asset: synth d-3.mp3');
-          return require('../assets/sounds/synth/d-3.mp3');
-        case 'e3.mp3': 
-          console.log('Loading asset: synth e3.mp3');
-          return require('../assets/sounds/synth/e3.mp3');
-        case 'f3.mp3': 
-          console.log('Loading asset: synth f3.mp3');
-          return require('../assets/sounds/synth/f3.mp3');
-        case 'f-3.mp3': 
-          console.log('Loading asset: synth f-3.mp3');
-          return require('../assets/sounds/synth/f-3.mp3');
-        case 'g3.mp3': 
-          console.log('Loading asset: synth g3.mp3');
-          return require('../assets/sounds/synth/g3.mp3');
-        case 'g-3.mp3': 
-          console.log('Loading asset: synth g-3.mp3');
-          return require('../assets/sounds/synth/g-3.mp3');
-        
+        case "a3.mp3":
+          console.log("Loading asset: synth a3.mp3");
+          return require("../assets/sounds/synth/a3.mp3");
+        case "a-3.mp3":
+          console.log("Loading asset: synth a-3.mp3");
+          return require("../assets/sounds/synth/a-3.mp3");
+        case "b3.mp3":
+          console.log("Loading asset: synth b3.mp3");
+          return require("../assets/sounds/synth/b3.mp3");
+        case "c3.mp3":
+          console.log("Loading asset: synth c3.mp3");
+          return require("../assets/sounds/synth/c3.mp3");
+        case "c-3.mp3":
+          console.log("Loading asset: synth c-3.mp3");
+          return require("../assets/sounds/synth/c-3.mp3");
+        case "d3.mp3":
+          console.log("Loading asset: synth d3.mp3");
+          return require("../assets/sounds/synth/d3.mp3");
+        case "d-3.mp3":
+          console.log("Loading asset: synth d-3.mp3");
+          return require("../assets/sounds/synth/d-3.mp3");
+        case "e3.mp3":
+          console.log("Loading asset: synth e3.mp3");
+          return require("../assets/sounds/synth/e3.mp3");
+        case "f3.mp3":
+          console.log("Loading asset: synth f3.mp3");
+          return require("../assets/sounds/synth/f3.mp3");
+        case "f-3.mp3":
+          console.log("Loading asset: synth f-3.mp3");
+          return require("../assets/sounds/synth/f-3.mp3");
+        case "g3.mp3":
+          console.log("Loading asset: synth g3.mp3");
+          return require("../assets/sounds/synth/g3.mp3");
+        case "g-3.mp3":
+          console.log("Loading asset: synth g-3.mp3");
+          return require("../assets/sounds/synth/g-3.mp3");
+
         // Notas do 4º octave
-        case 'a4.mp3': 
-          console.log('Loading asset: synth a4.mp3');
-          return require('../assets/sounds/synth/a4.mp3');
-        case 'a-4.mp3': 
-          console.log('Loading asset: synth a-4.mp3');
-          return require('../assets/sounds/synth/a-4.mp3');
-        case 'b4.mp3': 
-          console.log('Loading asset: synth b4.mp3');
-          return require('../assets/sounds/synth/b4.mp3');
-        case 'c4.mp3': 
-          console.log('Loading asset: synth c4.mp3');
-          return require('../assets/sounds/synth/c4.mp3');
-        case 'c-4.mp3': 
-          console.log('Loading asset: synth c-4.mp3');
-          return require('../assets/sounds/synth/c-4.mp3');
-        case 'd4.mp3': 
-          console.log('Loading asset: synth d4.mp3');
-          return require('../assets/sounds/synth/d4.mp3');
-        case 'd-4.mp3': 
-          console.log('Loading asset: synth d-4.mp3');
-          return require('../assets/sounds/synth/d-4.mp3');
-        case 'e4.mp3': 
-          console.log('Loading asset: synth e4.mp3');
-          return require('../assets/sounds/synth/e4.mp3');
-        case 'f4.mp3': 
-          console.log('Loading asset: synth f4.mp3');
-          return require('../assets/sounds/synth/f4.mp3');
-        case 'f-4.mp3': 
-          console.log('Loading asset: synth f-4.mp3');
-          return require('../assets/sounds/synth/f-4.mp3');
-        case 'g4.mp3': 
-          console.log('Loading asset: synth g4.mp3');
-          return require('../assets/sounds/synth/g4.mp3');
-        case 'g-4.mp3': 
-          console.log('Loading asset: synth g-4.mp3');
-          return require('../assets/sounds/synth/g-4.mp3');
-        
+        case "a4.mp3":
+          console.log("Loading asset: synth a4.mp3");
+          return require("../assets/sounds/synth/a4.mp3");
+        case "a-4.mp3":
+          console.log("Loading asset: synth a-4.mp3");
+          return require("../assets/sounds/synth/a-4.mp3");
+        case "b4.mp3":
+          console.log("Loading asset: synth b4.mp3");
+          return require("../assets/sounds/synth/b4.mp3");
+        case "c4.mp3":
+          console.log("Loading asset: synth c4.mp3");
+          return require("../assets/sounds/synth/c4.mp3");
+        case "c-4.mp3":
+          console.log("Loading asset: synth c-4.mp3");
+          return require("../assets/sounds/synth/c-4.mp3");
+        case "d4.mp3":
+          console.log("Loading asset: synth d4.mp3");
+          return require("../assets/sounds/synth/d4.mp3");
+        case "d-4.mp3":
+          console.log("Loading asset: synth d-4.mp3");
+          return require("../assets/sounds/synth/d-4.mp3");
+        case "e4.mp3":
+          console.log("Loading asset: synth e4.mp3");
+          return require("../assets/sounds/synth/e4.mp3");
+        case "f4.mp3":
+          console.log("Loading asset: synth f4.mp3");
+          return require("../assets/sounds/synth/f4.mp3");
+        case "f-4.mp3":
+          console.log("Loading asset: synth f-4.mp3");
+          return require("../assets/sounds/synth/f-4.mp3");
+        case "g4.mp3":
+          console.log("Loading asset: synth g4.mp3");
+          return require("../assets/sounds/synth/g4.mp3");
+        case "g-4.mp3":
+          console.log("Loading asset: synth g-4.mp3");
+          return require("../assets/sounds/synth/g-4.mp3");
+
         // Notas do 5º octave
-        case 'a5.mp3': 
-          console.log('Loading asset: synth a5.mp3');
-          return require('../assets/sounds/synth/a5.mp3');
-        case 'a-5.mp3': 
-          console.log('Loading asset: synth a-5.mp3');
-          return require('../assets/sounds/synth/a-5.mp3');
-        case 'b5.mp3': 
-          console.log('Loading asset: synth b5.mp3');
-          return require('../assets/sounds/synth/b5.mp3');
-        case 'c5.mp3': 
-          console.log('Loading asset: synth c5.mp3');
-          return require('../assets/sounds/synth/c5.mp3');
-        case 'c-5.mp3': 
-          console.log('Loading asset: synth c-5.mp3');
-          return require('../assets/sounds/synth/c-5.mp3');
-        case 'd5.mp3': 
-          console.log('Loading asset: synth d5.mp3');
-          return require('../assets/sounds/synth/d5.mp3');
-        case 'd-5.mp3': 
-          console.log('Loading asset: synth d-5.mp3');
-          return require('../assets/sounds/synth/d-5.mp3');
-        case 'e5.mp3': 
-          console.log('Loading asset: synth e5.mp3');
-          return require('../assets/sounds/synth/e5.mp3');
-        case 'f5.mp3': 
-          console.log('Loading asset: synth f5.mp3');
-          return require('../assets/sounds/synth/f5.mp3');
-        case 'f-5.mp3': 
-          console.log('Loading asset: synth f-5.mp3');
-          return require('../assets/sounds/synth/f-5.mp3');
-        case 'g5.mp3': 
-          console.log('Loading asset: synth g5.mp3');
-          return require('../assets/sounds/synth/g5.mp3');
-        case 'g-5.mp3': 
-          console.log('Loading asset: synth g-5.mp3');
-          return require('../assets/sounds/synth/g-5.mp3');
-        
+        case "a5.mp3":
+          console.log("Loading asset: synth a5.mp3");
+          return require("../assets/sounds/synth/a5.mp3");
+        case "a-5.mp3":
+          console.log("Loading asset: synth a-5.mp3");
+          return require("../assets/sounds/synth/a-5.mp3");
+        case "b5.mp3":
+          console.log("Loading asset: synth b5.mp3");
+          return require("../assets/sounds/synth/b5.mp3");
+        case "c5.mp3":
+          console.log("Loading asset: synth c5.mp3");
+          return require("../assets/sounds/synth/c5.mp3");
+        case "c-5.mp3":
+          console.log("Loading asset: synth c-5.mp3");
+          return require("../assets/sounds/synth/c-5.mp3");
+        case "d5.mp3":
+          console.log("Loading asset: synth d5.mp3");
+          return require("../assets/sounds/synth/d5.mp3");
+        case "d-5.mp3":
+          console.log("Loading asset: synth d-5.mp3");
+          return require("../assets/sounds/synth/d-5.mp3");
+        case "e5.mp3":
+          console.log("Loading asset: synth e5.mp3");
+          return require("../assets/sounds/synth/e5.mp3");
+        case "f5.mp3":
+          console.log("Loading asset: synth f5.mp3");
+          return require("../assets/sounds/synth/f5.mp3");
+        case "f-5.mp3":
+          console.log("Loading asset: synth f-5.mp3");
+          return require("../assets/sounds/synth/f-5.mp3");
+        case "g5.mp3":
+          console.log("Loading asset: synth g5.mp3");
+          return require("../assets/sounds/synth/g5.mp3");
+        case "g-5.mp3":
+          console.log("Loading asset: synth g-5.mp3");
+          return require("../assets/sounds/synth/g-5.mp3");
+
         // Nota extra
-        case 'c6.mp3': 
-          console.log('Loading asset: synth c6.mp3');
-          return require('../assets/sounds/synth/c6.mp3');
-          
+        case "c6.mp3":
+          console.log("Loading asset: synth c6.mp3");
+          return require("../assets/sounds/synth/c6.mp3");
+
         // Se não encontrar, tenta usar o fallback do piano
         default:
-          return require('../assets/sounds/synth/c4.mp3');
+          return require("../assets/sounds/synth/c4.mp3");
+      }
+    } else if (this.currentInstrument === "guitar") {
+      switch (fileName) {
+        // Notas do 2º octave
+        case "a2.mp3":
+          console.log("Loading asset: guitar a2.mp3");
+          return require("../assets/sounds/guitar/a2.mp3");
+        case "a-2.mp3":
+          console.log("Loading asset: guitar a-2.mp3");
+          return require("../assets/sounds/guitar/a-2.mp3");
+        case "b2.mp3":
+          console.log("Loading asset: guitar b2.mp3");
+          return require("../assets/sounds/guitar/b2.mp3");
+        case "e2.mp3":
+          console.log("Loading asset: guitar e2.mp3");
+          return require("../assets/sounds/guitar/e2.mp3");
+        case "f2.mp3":
+          console.log("Loading asset: guitar f2.mp3");
+          return require("../assets/sounds/guitar/f2.mp3");
+        case "f-2.mp3":
+          console.log("Loading asset: guitar f-2.mp3");
+          return require("../assets/sounds/guitar/f-2.mp3");
+        case "g2.mp3":
+          console.log("Loading asset: guitar g2.mp3");
+          return require("../assets/sounds/guitar/g2.mp3");
+        case "g-2.mp3":
+          console.log("Loading asset: guitar g-2.mp3");
+          return require("../assets/sounds/guitar/g-2.mp3");
+        // Notas do 3º octave
+        case "a3.mp3":
+          console.log("Loading asset: guitar a3.mp3");
+          return require("../assets/sounds/guitar/a3.mp3");
+        case "a-3.mp3":
+          console.log("Loading asset: guitar a-3.mp3");
+          return require("../assets/sounds/guitar/a-3.mp3");
+        case "b3.mp3":
+          console.log("Loading asset: guitar b3.mp3");
+          return require("../assets/sounds/guitar/b3.mp3");
+        case "c3.mp3":
+          console.log("Loading asset: guitar c3.mp3");
+          return require("../assets/sounds/guitar/c3.mp3");
+        case "c-3.mp3":
+          console.log("Loading asset: guitar c-3.mp3");
+          return require("../assets/sounds/guitar/c-3.mp3");
+        case "d3.mp3":
+          console.log("Loading asset: guitar d3.mp3");
+          return require("../assets/sounds/guitar/d3.mp3");
+        case "d-3.mp3":
+          console.log("Loading asset: guitar d-3.mp3");
+          return require("../assets/sounds/guitar/d-3.mp3");
+        case "e3.mp3":
+          console.log("Loading asset: guitar e3.mp3");
+          return require("../assets/sounds/guitar/e3.mp3");
+        case "f3.mp3":
+          console.log("Loading asset: guitar f3.mp3");
+          return require("../assets/sounds/guitar/f3.mp3");
+        case "f-3.mp3":
+          console.log("Loading asset: guitar f-3.mp3");
+          return require("../assets/sounds/guitar/f-3.mp3");
+        case "g3.mp3":
+          console.log("Loading asset: guitar g3.mp3");
+          return require("../assets/sounds/guitar/g3.mp3");
+        case "g-3.mp3":
+          console.log("Loading asset: guitar g-3.mp3");
+          return require("../assets/sounds/guitar/g-3.mp3");
+
+        // Notas do 4º octave
+        case "a4.mp3":
+          console.log("Loading asset: guitar a4.mp3");
+          return require("../assets/sounds/guitar/a4.mp3");
+        case "a-4.mp3":
+          console.log("Loading asset: guitar a-4.mp3");
+          return require("../assets/sounds/guitar/a-4.mp3");
+        case "b4.mp3":
+          console.log("Loading asset: guitar b4.mp3");
+          return require("../assets/sounds/guitar/b4.mp3");
+        case "c4.mp3":
+          console.log("Loading asset: guitar c4.mp3");
+          return require("../assets/sounds/guitar/c4.mp3");
+        case "c-4.mp3":
+          console.log("Loading asset: guitar c-4.mp3");
+          return require("../assets/sounds/guitar/c-4.mp3");
+        case "d4.mp3":
+          console.log("Loading asset: guitar d4.mp3");
+          return require("../assets/sounds/guitar/d4.mp3");
+        case "d-4.mp3":
+          console.log("Loading asset: guitar d-4.mp3");
+          return require("../assets/sounds/guitar/d-4.mp3");
+        case "e4.mp3":
+          console.log("Loading asset: guitar e4.mp3");
+          return require("../assets/sounds/guitar/e4.mp3");
+        case "f4.mp3":
+          console.log("Loading asset: guitar f4.mp3");
+          return require("../assets/sounds/guitar/f4.mp3");
+        case "f-4.mp3":
+          console.log("Loading asset: guitar f-4.mp3");
+          return require("../assets/sounds/guitar/f-4.mp3");
+        case "g4.mp3":
+          console.log("Loading asset: guitar g4.mp3");
+          return require("../assets/sounds/guitar/g4.mp3");
+        case "g-4.mp3":
+          console.log("Loading asset: guitar g-4.mp3");
+          return require("../assets/sounds/guitar/g-4.mp3");
+
+        // Notas do 5º octave
+        case "a5.mp3":
+          console.log("Loading asset: guitar a5.mp3");
+          return require("../assets/sounds/guitar/a5.mp3");
+        case "a-5.mp3":
+          console.log("Loading asset: guitar a-5.mp3");
+          return require("../assets/sounds/guitar/a-5.mp3");
+        case "b5.mp3":
+          console.log("Loading asset: guitar b5.mp3");
+          return require("../assets/sounds/guitar/b5.mp3");
+        case "c5.mp3":
+          console.log("Loading asset: guitar c5.mp3");
+          return require("../assets/sounds/guitar/c5.mp3");
+        case "c-5.mp3":
+          console.log("Loading asset: guitar c-5.mp3");
+          return require("../assets/sounds/guitar/c-5.mp3");
+        case "d5.mp3":
+          console.log("Loading asset: guitar d5.mp3");
+          return require("../assets/sounds/guitar/d5.mp3");
+        case "d-5.mp3":
+          console.log("Loading asset: guitar d-5.mp3");
+          return require("../assets/sounds/guitar/d-5.mp3");
+        case "e5.mp3":
+          console.log("Loading asset: guitar e5.mp3");
+          return require("../assets/sounds/guitar/e5.mp3");
+        case "f5.mp3":
+          console.log("Loading asset: guitar f5.mp3");
+          return require("../assets/sounds/guitar/f5.mp3");
+        case "f-5.mp3":
+          console.log("Loading asset: guitar f-5.mp3");
+          return require("../assets/sounds/guitar/f-5.mp3");
+        case "g5.mp3":
+          console.log("Loading asset: guitar g5.mp3");
+          return require("../assets/sounds/guitar/g5.mp3");
+        case "g-5.mp3":
+          console.log("Loading asset: guitar g-5.mp3");
+          return require("../assets/sounds/guitar/g-5.mp3");
+
+        // Nota extra
+        case "c6.mp3":
+          console.log("Loading asset: guitar c6.mp3");
+          return require("../assets/sounds/guitar/c6.mp3");
+
+        // Se não encontrar, tenta usar o fallback do piano
+        default:
+          return require("../assets/sounds/guitar/c4.mp3");
       }
     }
-    
+
     // Fallback
-    console.log('⚠️ Using fallback sound: c4.mp3');
-    return require('../assets/sounds/synth/c4.mp3');
+    console.log("⚠️ Using fallback sound: c4.mp3");
+    return require("../assets/sounds/synth/c4.mp3");
   }
 
   // Gerenciar o tamanho do cache
   private manageCacheSize(): void {
     const keys = Object.keys(this.soundCache);
     console.log(`Cache size check: ${keys.length}/${this.cacheLimit}`);
-    
+
     if (keys.length >= this.cacheLimit) {
-      console.log('Cache limit reached, cleaning oldest sounds...');
+      console.log("Cache limit reached, cleaning oldest sounds...");
       // Ordenar pelo menos recentemente usado
-      keys.sort((a, b) => this.soundCache[a].lastUsed - this.soundCache[b].lastUsed);
-      
+      keys.sort(
+        (a, b) => this.soundCache[a].lastUsed - this.soundCache[b].lastUsed
+      );
+
       // Remover os mais antigos
       for (let i = 0; i < keys.length / 2; i++) {
         const key = keys[i];
@@ -340,31 +504,33 @@ class SoundManager {
         this.soundCache[key].sound.unloadAsync();
         delete this.soundCache[key];
       }
-      console.log(`Cache cleaned, new size: ${Object.keys(this.soundCache).length}`);
+      console.log(
+        `Cache cleaned, new size: ${Object.keys(this.soundCache).length}`
+      );
     }
   }
 
   // Limpar o cache
   async clearCache(): Promise<void> {
     try {
-      console.log('Clearing sound cache...');
+      console.log("Clearing sound cache...");
       const keys = Object.keys(this.soundCache);
       for (const key of keys) {
         await this.soundCache[key].sound.unloadAsync();
       }
       this.soundCache = {};
-      console.log('Sound cache cleared');
+      console.log("Sound cache cleared");
     } catch (error) {
-      console.error('Error clearing sound cache:', error);
+      console.error("Error clearing sound cache:", error);
     }
   }
 
   // Descarregar todos os sons
   async unloadAll(): Promise<void> {
-    console.log('Unloading all sounds...');
+    console.log("Unloading all sounds...");
     await this.clearCache();
-    console.log('All sounds unloaded');
+    console.log("All sounds unloaded");
   }
 }
 
-export default new SoundManager(); 
+export default new SoundManager();

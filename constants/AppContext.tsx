@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type InstrumentType = 'synth';
+export type InstrumentType = 'synth' | 'guitar';
 
 export interface AppSettings {
   notesPerTurn: number;

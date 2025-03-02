@@ -13,7 +13,7 @@ interface SettingsScreenProps {
 // Opções de instrumentos disponíveis
 const instrumentOptions: {label: string; value: InstrumentType; disabled?: boolean}[] = [
   { label: "Sintetizador", value: "synth" },
-  // { label: "Violão (em breve)", value: "guitar", disabled: true },
+  { label: "Violão", value: "guitar" },
   // { label: "Baixo (em breve)", value: "bass", disabled: true },
   // { label: "Ukulele (em breve)", value: "ukulele", disabled: true }
 ];
