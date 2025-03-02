@@ -2,7 +2,7 @@
   "name": "Percepção Musical",
   "short_name": "Percepção",
   "description": "Aplicativo para treinamento auditivo e reconhecimento de notas musicais",
-  "start_url": "/",
+  "start_url": "/app-percepcao-musical/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4630eb",
