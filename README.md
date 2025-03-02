@@ -1,50 +1,82 @@
-# Welcome to your Expo app 👋
+# Percepção Musical
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Um aplicativo para auxiliar músicos a treinar seu ouvido para reconhecer notas musicais.
 
-## Get started
+## Sobre
 
-1. Install dependencies
+Percepção Musical é um aplicativo de treinamento auditivo projetado para ajudar músicos de todos os níveis a melhorar sua capacidade de identificar notas musicais. O aplicativo reproduz uma sequência de notas que o usuário deve repetir, ajudando a desenvolver o ouvido musical.
 
-   ```bash
-   npm install
-   ```
+## Recursos
 
-2. Start the app
+* Treinamento auditivo para reconhecimento de notas
+* Sequências personalizáveis de notas musicais
+* Suporte para diferentes instrumentos (atualmente Synth, com mais instrumentos planejados)
+* Detecção inteligente de notas musicais usando Web Audio API
+* Feedback visual e sonoro
+* Filtro de volume para evitar detecções falsas por ruído ambiente
+* Visualização do nível de volume em tempo real
+* Personalização da sensibilidade do microfone
 
-   ```bash
-    npx expo start
-   ```
+## Tecnologias
 
-In the output, you'll find options to open the app in a
+* React Native (usando Expo)
+* TypeScript
+* Expo Audio API para reprodução de som
+* Web Audio API para análise de áudio (na web)
+* Pitchy para detecção de frequência e identificação de notas
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Detalhes de Implementação
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Sistema de Reprodução de Áudio
 
-## Get a fresh project
+O aplicativo utiliza amostras de áudio MP3 de alta qualidade para reproduzir os sons dos instrumentos. Um sistema de cache eficiente é implementado para carregar e gerenciar os arquivos de áudio.
 
-When you're ready, run:
+### Detecção de Notas
 
-```bash
-npm run reset-project
-```
+Para a detecção de notas, o aplicativo utiliza duas abordagens:
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+1. **Web**: Usa a Web Audio API com a biblioteca Pitchy para analisar o áudio em tempo real e detectar a frequência fundamental do som, convertendo-a para a nota musical correspondente.
 
-## Learn more
+2. **Dispositivos Móveis**: Implementa um sistema simplificado de detecção de frequência em nativo.
 
-To learn more about developing your project with Expo, look at the following resources:
+### Filtro de Volume
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+O sistema inclui um filtro inteligente de volume que:
+- Ignora sons de baixo volume (ruído de fundo)
+- Só detecta notas quando o volume ultrapassa um threshold configurável
+- Fornece feedback visual do volume em tempo real
+- Permite ao usuário ajustar a sensibilidade conforme seu ambiente
 
-## Join the community
+## Como Adicionar Novos Instrumentos
 
-Join our community of developers creating universal apps.
+Para adicionar um novo instrumento ao aplicativo:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. Crie uma pasta para o instrumento em `assets/sounds/[nome-do-instrumento]`
+2. Adicione arquivos MP3 das notas nomeados no formato `[nota]-[oitava].mp3` (exemplo: `c-3.mp3`, `e-4.mp3`, etc.)
+3. Atualize o código em `constants/Notes.ts` para incluir o novo instrumento
+4. Adicione o instrumento à lista de opções em `components/SettingsScreen.tsx`
+
+## Suporte a Plataformas
+
+O aplicativo funciona em:
+- Web (funcionalidade completa de detecção de notas)
+- iOS e Android (detecção de notas básica)
+
+## Configurações
+
+O aplicativo permite personalizar:
+- Número de notas por sequência
+- Repetições necessárias para avançar
+- Intervalo máximo entre notas (em semitons)
+- Número total de sequências
+- Instrumento usado
+- Sensibilidade do microfone
+- Feedback visual
+
+## Contribuição
+
+Contribuições são bem-vindas! Se você deseja adicionar recursos, corrigir bugs ou melhorar a documentação, sinta-se à vontade para abrir um pull request.
+
+## Licença
+
+Este projeto é licenciado sob a licença MIT.
