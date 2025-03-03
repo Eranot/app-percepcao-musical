@@ -1,7 +1,7 @@
 // Verificar se o navegador suporta Service Workers
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/app-percepcao-musical/service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js')
       .then(function(registration) {
         console.log('Service Worker registrado com sucesso:', registration.scope);
       })

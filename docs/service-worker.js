@@ -3,10 +3,10 @@ const CACHE_NAME = 'percepcao-musical-cache-v1';
 
 // Arquivos a serem armazenados em cache
 const urlsToCache = [
-  '/app-percepcao-musical/',
-  '/app-percepcao-musical/index.html',
-  '/app-percepcao-musical/expo/static/js/web/entry-9a744f11a2399f0feaea0460ef978a30.js',
-  '/app-percepcao-musical/manifest.json',
+  '/',
+  '/index.html',
+  '/expo/static/js/web/entry-9a744f11a2399f0feaea0460ef978a30.js',
+  '/manifest.json',
   // Adicionar outras URLs conforme necessário
 ];
 
