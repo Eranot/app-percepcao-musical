@@ -29,7 +29,7 @@ const defaultSettings: AppSettings = {
   showSuccessIndicator: true,
   showNotes: true,
   totalSequences: 10,
-  instrument: 'synth',
+  instrument: 'guitar',
   volumeThreshold: 0.01,
 };
 

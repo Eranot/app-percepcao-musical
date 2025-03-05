@@ -148,6 +148,9 @@ class SoundManager {
         };
         console.log(`Added ${noteName} sound to cache`);
 
+        // Aumentar o volume para 2x
+        await sound.setVolumeAsync(2.0);
+        
         // Reproduzir o som
         console.log(`Playing sound for ${noteName}...`);
         const playbackStatus = await sound.playAsync();
@@ -160,6 +163,8 @@ class SoundManager {
           const fallbackSound = await Audio.Sound.createAsync(
             require("../assets/sounds/synth/c4.mp3")
           );
+          // Aumentar o volume do fallback também
+          await fallbackSound.sound.setVolumeAsync(2.0);
           await fallbackSound.sound.playAsync();
           console.log(`Played fallback sound for ${noteName}`);
         } catch (fallbackError) {
